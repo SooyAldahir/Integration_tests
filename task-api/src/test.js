@@ -1,27 +1,37 @@
 const request = require("supertest");
-const app = require("./server");
+const { expect } = require("chai");
+const { app, _reset } = require("./server");
 
-describe("Pruebas a nivel de componete - Usuarios API", () => {
-  it("Debe registrar un usuario con datos validos", async () => {
-    const response = await request(app)
+describe("Pruebas a nivel de componente - Usuarios API", () => {
+  // Limpia el arreglo antes de cada prueba
+  beforeEach(() => _reset());
+
+  it("Debe registrar un usuario con datos válidos", async () => {
+    const res = await request(app)
       .post("/api/users")
       .send({ name: "Waldir", email: "w@test.com" });
 
-    expect(response.status).toBe(201);
-    expect(response.body).toHaveProperty("id");
-    expect(response.body.name).toBe("Waldir");
+    expect(res.status).to.equal(201);
+    expect(res.body).to.have.property("id");
+    expect(res.body.name).to.equal("Waldir");
   });
 
   it("Debe rechazar registro si faltan datos", async () => {
-    const response = await request(app).post("/api/users").send({ name: "" });
+    const res = await request(app).post("/api/users").send({ name: "" });
 
-    expect(response.status).toBe(400);
-    expect(response.body).toHaveProperty("error");
+    expect(res.status).to.equal(400);
+    expect(res.body).to.have.property("error");
   });
 
   it("Debe listar usuarios registrados", async () => {
-    const response = await request(app).get("/api/users");
-    expect(response.status).toBe(200);
-    expect(Array.isArray(response.body)).toBe(true);
+    // agrega un usuario primero
+    await request(app)
+      .post("/api/users")
+      .send({ name: "Ana", email: "ana@test.com" });
+
+    const res = await request(app).get("/api/users");
+    expect(res.status).to.equal(200);
+    expect(res.body).to.be.an("array");
+    expect(res.body.length).to.equal(1);
   });
 });
