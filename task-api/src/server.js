@@ -1,28 +1,48 @@
+// server.js
 const express = require("express");
 const app = express();
 
 app.use(express.json());
 
-//componente: Modulo de Usuarios
+// --- Estado en memoria para pruebas ---
 let users = [];
+let nextId = 1;
 
-//End point para crear usuario
+// POST /api/users → crear usuario
 app.post("/api/users", (req, res) => {
-  const { name, email } = req.body;
-  if (!name || !email) {
-    return res.status(400).json({
-      error: "Datos incompletos",
-    });
+  const { name, email } = req.body || {};
+  if (
+    !name || !email ||
+    typeof name !== "string" || typeof email !== "string" ||
+    name.trim() === "" || email.trim() === ""
+  ) {
+    return res.status(400).json({ error: "name y email son requeridos (string)" });
   }
-  const user = { id: users.length + 1, name, email };
+
+  const user = { id: nextId++, name: name.trim(), email: email.trim() };
   users.push(user);
-  res.status(201).json(user);
+  return res.status(201).json(user);
 });
 
-app.get("/api/users", (req, res) => {
-  res.json(users);
+// GET /api/users → listar usuarios
+app.get("/api/users", (_req, res) => {
+  return res.status(200).json(users);
 });
 
-app.listen(3000, () => console.log("Servidor corriendo en el puerto 3000"));
+// (Opcional) PUT/DELETE si lo necesitas más adelante
+// app.put("/api/users/:id", ...)
+// app.delete("/api/users/:id", ...)
 
-module.exports = app;
+// Levanta el server solo si se ejecuta directamente (no en tests)
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`API escuchando en puerto ${PORT}`));
+}
+
+// Helpers para pruebas
+function _reset() {
+  users = [];
+  nextId = 1;
+}
+
+module.exports = { app, _reset };
